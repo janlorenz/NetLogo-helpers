@@ -1,47 +1,77 @@
-globals [ sample sample-musigma]
-
-to-report beta-pdf [x a b] ; https://en.wikipedia.org/wiki/Beta_distribution
-  report x ^ (a - 1) * (1 - x) ^ (b - 1) / beta-function-stirling-approx a b
-end
-
-to-report beta-pdf-musigma [x m s] ; https://en.wikipedia.org/wiki/Beta_distribution
-  report x ^ ((alpha-musigma m s) - 1) * (1 - x) ^ ((beta-musigma m s) - 1) / beta-function-stirling-approx (alpha-musigma m s) (beta-musigma m s)
-end
-
-to-report beta-function-stirling-approx [a b]  ; https://en.wikipedia.org/wiki/Beta_function#Approximation
-  report sqrt ( 2 * pi) * (a ^ (a - 0.5) * b ^ (b - 0.5)) / (a + b) ^ (a + b - 0.5)
-end
-
-to-report alpha-musigma [m s]
-    report max list 0.001 (m * ((m * (1 - m)) / s ^ 2 - 1))
-end
-
-to-report beta-musigma [m s]
-    report max list 0.001 ((1 - m) * ((m * (1 - m)) / s ^ 2 - 1))
-end
+globals [ sample sample-meansd]
 
 to-report random-beta [a b]
    let x random-gamma a 1
    report ( x / ( x + random-gamma b 1) )
 end
 
-to-report random-beta-musigma [m s]
-  ifelse (s > 0) [
-    let x random-gamma (alpha-musigma m s) 1
-    report ( x / ( x + random-gamma (beta-musigma m s) 1) )
-  ][
-    report m
-  ]
+to-report random-beta-meansd [m s]
+  ; creates random numbers from a beta distribution given mean and sd
+  ; works also for cases where standard deviation is zero and
+  ; standard deviation above the maximal possible value
+  ; WARNING: random numbers may become instable when s is close to zero or close to maximal
+  (ifelse
+    (s = 0 or m = 1 or m = 0) [ report m ]
+    (s >= max-sd-beta-meansd m) [ report ifelse-value (random-float 1 < m) [1] [0] ]
+    [ ; elsecommands
+      let x random-gamma (alpha-beta-meansd m s) 1
+      report x / ( x + random-gamma (beta-beta-meansd m s) 1)
+    ])
+end
+
+; probability density function for beta distribution
+
+to-report pdf-beta [x a b]
+  ; https://en.wikipedia.org/wiki/Beta_distribution
+  report x ^ (a - 1) * (1 - x) ^ (b - 1) / beta-function-stirling-approx a b
+end
+
+to-report pdf-beta-meansd [x m s]
+  ; https://en.wikipedia.org/wiki/Beta_distribution
+  report x ^ ((alpha-beta-meansd m s) - 1) * (1 - x) ^ ((beta-beta-meansd m s) - 1) / beta-function-stirling-approx (alpha-beta-meansd m s) (beta-beta-meansd m s)
+end
+
+to-report beta-function-stirling-approx [a b]
+  ; https://en.wikipedia.org/wiki/Beta_function#Approximation
+  report sqrt ( 2 * pi) * (a ^ (a - 0.5) * b ^ (b - 0.5)) / (a + b) ^ (a + b - 0.5)
+end
+
+
+;; computations
+
+to-report alpha-beta-meansd [m s]
+  ; computes the alpha parameter of beta distribution for mean m and sd s
+  report m * ((m * (1 - m)) / s ^ 2 - 1)
+end
+
+to-report beta-beta-meansd [m s]
+  ; computes the alpha parameter of beta distribution for mean m and sd s
+  report (1 - m) * ((m * (1 - m)) / s ^ 2 - 1)
+end
+
+to-report mean-beta [a b]
+  ; computes the alpha parameter of beta distribution for mean m and sd s
+  report a / (a + b)
+end
+
+to-report sd-beta [a b]
+  ; computes the alpha parameter of beta distribution for mean m and sd s
+  report sqrt ( a * b / ((a + b) ^ 2 * (a + b + 1)) )
+end
+
+to-report max-sd-beta-meansd [m]
+  ; computes the maximal standard deviation of a beta-distribution give its mean
+  report sqrt (m * (1 - m))
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-220
-20
-261
-62
+595
+10
+666
+82
 -1
 -1
-1.0
+1.91
 1
 10
 1
@@ -64,13 +94,13 @@ ticks
 SLIDER
 10
 105
-350
+195
 138
 alpha
 alpha
 0.01
 30
-6.21
+7.95
 0.01
 1
 NIL
@@ -79,22 +109,22 @@ HORIZONTAL
 SLIDER
 10
 145
-350
+195
 178
 beta
 beta
 0.01
 30
-16.17
+2.13
 0.01
 1
 NIL
 HORIZONTAL
 
 PLOT
-80
+170
 185
-280
+370
 335
 beta-pdf
 NIL
@@ -107,13 +137,13 @@ true
 false
 "" "clear-plot"
 PENS
-"default" 1.0 0 -16777216 true "" "plotxy 0 0\nforeach  n-values 99 [ x -> (x + 1) / 100] [y -> plotxy y beta-pdf y alpha beta]\nplotxy 1 0"
+"default" 1.0 0 -16777216 true "" "plotxy 0 0\nforeach  n-values 99 [ x -> (x + 1) / 100] [y -> plotxy y pdf-beta y alpha beta]\nplotxy 1 0"
 
 BUTTON
 10
-20
+30
 214
-53
+63
 NIL
 update-plots\n
 T
@@ -129,35 +159,35 @@ NIL
 MONITOR
 10
 185
-75
+160
 230
-mean
-alpha / (alpha + beta)
+NIL
+mean-beta alpha beta
 4
 1
 11
 
 MONITOR
 10
-255
-75
-300
-std
-sqrt ( alpha * beta / ((alpha + beta) ^ 2 * (alpha + beta + 1)) )
+235
+160
+280
+NIL
+sd-beta alpha beta
 4
 1
 11
 
 SLIDER
 5
-365
-355
-398
-mu
-mu
+400
+200
+433
+mean-B
+mean-B
 0
 1
-0.19
+0.37
 0.01
 1
 NIL
@@ -165,24 +195,24 @@ HORIZONTAL
 
 SLIDER
 5
-405
-355
-438
-sigma
-sigma
+440
+200
+473
+sd-B
+sd-B
 0
 0.5
-0.17
+0.12
 0.01
 1
 NIL
 HORIZONTAL
 
 PLOT
-85
-445
-285
-595
+240
+490
+440
+640
 beta-pdf-musigma
 NIL
 NIL
@@ -194,45 +224,35 @@ true
 false
 "" "clear-plot"
 PENS
-"default" 1.0 0 -16777216 true "" "plotxy 0 0\nforeach  n-values 99 [ x -> (x + 1) / 100] [y -> plotxy y beta-pdf-musigma y mu sigma]\nplotxy 1 0"
-
-TEXTBOX
-365
-365
-570
-425
-Warning: The computation of alpha and beta from mu and sigma has some numerical pitfalls! Danger zones: sigma close to zero and sigma close to 0.5
-10
-0.0
-1
+"default" 1.0 0 -16777216 true "" "plotxy 0 0\nforeach  n-values 99 [ x -> (x + 1) / 100] [y -> plotxy y pdf-beta-meansd y mean-B sd-B]\nplotxy 1 0"
 
 MONITOR
 5
-455
-75
-500
-alpha
-alpha-musigma mu sigma
+490
+232
+535
+NIL
+alpha-beta-meansd mean-B sd-B
 3
 1
 11
 
 MONITOR
 5
-510
-75
-555
-beta
-beta-musigma mu sigma
+545
+227
+590
+NIL
+beta-beta-meansd mean-B sd-B
 3
 1
 11
 
 BUTTON
-320
-190
-570
-223
+375
+145
+610
+178
 random sample 1000
 set sample n-values 1000 [x -> random-beta alpha beta]\nupdate-plots
 NIL
@@ -246,15 +266,15 @@ NIL
 1
 
 PLOT
-585
+375
 185
-820
+610
 335
 Histogram sample
 NIL
 NIL
-0.0
-1.0
+-0.01
+1.01
 0.0
 10.0
 true
@@ -264,12 +284,12 @@ PENS
 "default" 0.02 1 -16777216 true "" "histogram sample"
 
 BUTTON
-325
 445
-577
-478
-random sample musigma 1000
-set sample-musigma n-values 1000 [x -> random-beta-musigma mu sigma]\nupdate-plots
+450
+680
+483
+random sample mean sd 1000
+set sample-meansd n-values 1000 [x -> random-beta-meansd mean-B sd-B]\nupdate-plots
 NIL
 1
 T
@@ -281,22 +301,63 @@ NIL
 1
 
 PLOT
-590
 445
-825
-595
-Histogram sample-musigma
+490
+680
+640
+Histogram sample-meansd
 NIL
 NIL
-0.0
-1.0
+-0.1
+1.01
 0.0
 10.0
 true
 false
 "" "clear-plot"
 PENS
-"default" 0.02 1 -16777216 true "" "histogram sample-musigma"
+"default" 0.02 1 -16777216 true "" "histogram sample-meansd"
+
+TEXTBOX
+15
+10
+540
+35
+Click the button \"update-plots\" to make the pdfs visible continuously
+12
+0.0
+1
+
+MONITOR
+210
+390
+417
+435
+NIL
+max-sd-beta-meansd mean-B
+4
+1
+11
+
+TEXTBOX
+15
+80
+715
+105
+Beta distributions with standard parameters alpha and beta
+12
+0.0
+1
+
+TEXTBOX
+10
+365
+555
+385
+Beta distribution with mean and standard-deviation as parameters
+12
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
