@@ -67,11 +67,11 @@ end
 GRAPHICS-WINDOW
 595
 10
-666
-82
+686
+102
 -1
 -1
-1.91
+2.52
 1
 10
 1
@@ -187,7 +187,7 @@ mean-B
 mean-B
 0
 1
-0.37
+0.5
 0.01
 1
 NIL
@@ -202,7 +202,7 @@ sd-B
 sd-B
 0
 0.5
-0.12
+0.5
 0.01
 1
 NIL
@@ -273,8 +273,8 @@ PLOT
 Histogram sample
 NIL
 NIL
--0.01
-1.01
+-0.1
+1.1
 0.0
 10.0
 true
@@ -309,7 +309,7 @@ Histogram sample-meansd
 NIL
 NIL
 -0.1
-1.01
+1.1
 0.0
 10.0
 true
@@ -673,7 +673,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.3.0
+NetLogo 6.4.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
